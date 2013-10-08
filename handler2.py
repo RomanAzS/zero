@@ -23,7 +23,6 @@ def invite(message):
 
 def who_reply(message):
 #    print(message)
-    print(channels)
     msg = message[1].split()
     channel = msg[3]; 
     usernick = msg[7];
@@ -35,7 +34,8 @@ def who_reply(message):
         userrole = userflags[-1]
 #        userflags = userflags[-1:]
 #    print(username, userhost, userrole, userflags)
-    channels[channel][usernick] = username, userhost, userrole, userflags
+    channels[channel][usernick] = {'uname': username, 'uhost': userhost, 'urole': userrole, 'uflags': userflags}
+#    print(channels)
     return
 
 def user_part(message):
@@ -46,8 +46,8 @@ def user_gone(message): # this is assuming KICK an PART follow same format
     channel = message[2][:-1]
     user = message[1].split('!')[0]
     if user != 'cero':
-        del channel[channel][user]
-    else: del channel[channel]    
+        del channels[channel][user]
+    else: del channels[channel]    
     pass
 
 def user_quat(message):
@@ -55,16 +55,24 @@ def user_quat(message):
     channel = message[2][:-1]
     user = message[1].split('!')[0]
     if user != 'cero':
-        del channel[channel][user]
+        del channels[channel][user]
     pass
 
 def user_nick(message):
     """When a user changes their nick remap their entry in chan dict
     to their new nick"""
+    nickorig = message[1].split('!')[0].strip()
+    nicknew = message[2].strip()
+#    print(channels)
+    for item in list(channels.keys()):
+        if nickorig in list(channels[item].keys()):
+            channels[item][nicknew] = channels[item][nickorig]
+            del channels[item][nickorig]
     pass
 
 handledTypes = {'JOIN': user_join, 'PART': user_part, 'INVITE': invite,
-    '352': who_reply, 'QUIT': user_quat, 'PART': user_gone, 'KICK': user_gone}
+    '352': who_reply, 'QUIT': user_quat, 'PART': user_gone, 'KICK': user_gone,
+    'NICK': user_nick}
 
 def handler(raw_message):
     message = raw_message.split(':')
