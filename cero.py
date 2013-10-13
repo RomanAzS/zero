@@ -1,10 +1,9 @@
 import time
 import socket
-import handler2
+import events
 import sys
 import argparse
 
-HOST = "irc.awfulnet.org"
 PORT = 6667
 NICK = "cero"
 IDENT = "zero"

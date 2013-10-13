@@ -1,5 +1,3 @@
-import time
-
 channels = {}
 
 def user_join(message):
@@ -68,6 +66,12 @@ def user_nick(message):
         if nickorig in list(channels[item].keys()):
             channels[item][nicknew] = channels[item][nickorig]
             del channels[item][nickorig]
+
+def privmsg(message):
+    pass
+
+def notice(message):
+    """For integrating services functionality"""
     pass
 
 handledTypes = {'JOIN': user_join, 'PART': user_part, 'INVITE': invite,
