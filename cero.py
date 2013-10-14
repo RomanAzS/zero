@@ -1,6 +1,6 @@
 import time
 import socket
-import events
+from events import Reciev
 import sys
 import argparse
 
@@ -43,8 +43,8 @@ while loop == 0:
     recieved = messages.pop()
     
     for line in messages:
-        print(line)
-        stuff = handler2.handler(line)
+#        print(line)
+        stuff = Reciev().handler(line)
         if stuff != None: 
             s.send(stuff.encode())
         if line.startswith("ERROR"): loop = 19
