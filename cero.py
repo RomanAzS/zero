@@ -1,8 +1,22 @@
 import time
 import socket
-from events import Reciev
+from events import Recv
 import sys
 import argparse
+import os.path
+
+if not os.path.isfile("cero.conf"): 
+    print("WARNING: No config file detected. Run anyway? (y/n)")
+    def f():
+        anser = input()
+        if anser == 'y': return
+        elif anser == 'n':
+            print("Exiting.")
+            sys.exit(0)
+        else: 
+            print("Please input 'y' or 'n'.")
+            f()
+    f()
 
 PORT = 6667
 NICK = "cero"
@@ -26,26 +40,29 @@ if args.ident != None: IDENT = args.ident
 if args.realname != None: REALNAME = args.realname
 print("Connecting to {0} {1}..." .format(HOST, PORT))
 
-s = socket.socket()
-s.connect((HOST, PORT)) # connect to host and port
-s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
-s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
+def start(loop):
+    s = socket.socket()
+    s.connect((HOST, PORT)) # connect to host and port
+    s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
+    s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
+    #s.send(("MODE {0} +B".format(NICK)).encode())
 
-#if args.identify != None: 
-#    time.sleep(2)
-#    s.send(("PRIVMSG NickServ identify {}".format(args.identify)).encode())
+    #if args.identify != None: 
+    #    time.sleep(2)
+    #    s.send(("PRIVMSG NickServ identify {}".format(args.identify)).encode())
 
-recieved = ""
-loop = 0
-while loop == 0:
-    recieved = recieved + (s.recv(1024)).decode()
-    messages = recieved.split('\n')
-    recieved = messages.pop()
+    recieved = ""
+    loop = 0
+    while loop == 0:
+        recieved = recieved + (s.recv(1024)).decode()
+        messages = recieved.split('\n')
+        recieved = messages.pop()
+
+        for line in messages:
+    #        print(line)
+            stuff = Recv().handler(line)
+            if stuff != None: 
+                s.send(stuff.encode())
+            if line.startswith("ERROR"): loop = 19
     
-    for line in messages:
-#        print(line)
-        stuff = Reciev().handler(line)
-        if stuff != None: 
-            s.send(stuff.encode())
-        if line.startswith("ERROR"): loop = 19
-    
+start(0)

@@ -1,13 +1,16 @@
 channels = {}
 admins = {"azi":4}
 
-class Reciev:
+class Recv:
     def __init__(self):
         self.channels = channels
         self.handledTypes = {'JOIN': self.user_join, 'PART': self.user_part,
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
-                        'KICK': self.user_gone, 'NICK': self.user_nick}
+                        'KICK': self.user_gone, 'NICK': self.user_nick,
+                        '376': self.endof_motd}
+    def endof_motd(self, message):
+        return "MODE cero +B"
     def user_join(self, message):
         print(message)
         channel = message[2][:-1]
@@ -95,4 +98,24 @@ class Reciev:
             messageType = message[0].strip()
             if messageType == 'PING':
                 return "PONG %s\r\n" % message[1]
+
+class Admins:
+    """Stuff for checking adminship"""
+    def __init__(self):
+        self.admins = {}
+
+    def isAdmin(self, user):
+        if self.admins[user] > 1: return True
+
+    def level(self,user):
+        return self.admins[user]
+    #somewhere in this mess, check whether new arrivals are in admin conf
+    # start using config files?
+    def giveAdmin(self, user):
+        pass
+
+class Privmsg:
+    def __init__(self):
+        self.commands = set()
+
 
