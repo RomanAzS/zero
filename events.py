@@ -1,5 +1,13 @@
 channels = {}
-admins = {"azi":4}
+admins = {"kojiro":4}
+botnick = 'cero' 
+
+def initialize(nick, config, identify=None):
+    config = config
+    identify = identify 
+    botnick = nick
+    print(config)
+    print(identify)
 
 class Recv:
     def __init__(self):
@@ -10,13 +18,13 @@ class Recv:
                         'KICK': self.user_gone, 'NICK': self.user_nick,
                         '376': self.endof_motd}
     def endof_motd(self, message):
-        return "MODE cero +B"
+        return "MODE {0} +B".format(botnick)
     def user_join(self, message):
         print(message)
         channel = message[2][:-1]
-        print(channel)
+        #print(channel)
         user = message[1].split('!')[0]
-        if user == 'cero': #must change this or will break on different nick
+        if user == botnick :
             self.channels[channel] = {}
             print("Joined channel " + channel)
             return "WHO %s\r\n" % channel
@@ -42,7 +50,8 @@ class Recv:
     #    print(username, userhost, userrole, userflags)
         self.channels[channel][usernick] = {'uname': username, 
             'uhost': userhost, 'urole': userrole, 'uflags': userflags}
-        print(self.channels)
+        Admins.giveAdmin(usernick)
+#        print(self.channels)
         return
 
     def user_part(self, message):
@@ -54,7 +63,7 @@ class Recv:
         if message[1].split()[1] == PART:
             user = message[1].split('!')[0]
         else: user = message[1].split()[-1:]
-        if user != 'cero':
+        if user != botnick:
             del self.channels[channel][user]
         else: del self.channels[channel]    
         pass
@@ -63,7 +72,7 @@ class Recv:
         # checked; server kills/klines are also QUITs 
         channel = message[2][:-1]
         user = message[1].split('!')[0]
-        if user != 'cero':
+        if user != botnick:
             del self.channels[channel][user]
         pass
 
@@ -73,6 +82,7 @@ class Recv:
         nickorig = message[1].split('!')[0].strip()
         nicknew = message[2].strip()
     #    print(channels)
+        if nickorig == botnick: botnick = nicknew
         for item in list(self.channels.keys()):
             if nickorig in list(self.channels[item].keys()):
                 self.channels[item][nicknew] = self.channels[item][nickorig]
@@ -102,7 +112,7 @@ class Recv:
 class Admins:
     """Stuff for checking adminship"""
     def __init__(self):
-        self.admins = {}
+        self.admins = admins
 
     def isAdmin(self, user):
         if self.admins[user] > 1: return True
@@ -112,7 +122,16 @@ class Admins:
     #somewhere in this mess, check whether new arrivals are in admin conf
     # start using config files?
     def giveAdmin(self, user):
-        pass
+        print(config)
+        user = user.lower()
+        print(self.admins)
+        if config:
+            # open cofig, get information, havent worked out conf yet
+            pass
+        else: 
+            if user not in self.admins.keys():
+                self.admins[user] = 1
+                print(self.admins)
 
 class Privmsg:
     def __init__(self):
