@@ -1,30 +1,48 @@
+# -*- coding: utf-8 -*-
+
 channels = {}
 admins = {"kojiro":4}
-botnick = 'cero' 
-
-def initialize(nick, config, identify=None):
-    config = config
-    identify = identify 
-    botnick = nick
-    print(config)
-    print(identify)
+n = "nick"
 
 class Recv:
+#    config = True
+#    identify = None
+#    nick = 'cero'
     def __init__(self):
         self.channels = channels
-        self.handledTypes = {'JOIN': self.user_join, 'PART': self.user_part,
+        self.nick = {}
+        self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
                         'KICK': self.user_gone, 'NICK': self.user_nick,
-                        '376': self.endof_motd}
+                        '376': self.endof_motd, 'MODE': self.recv_mode}
+
+#    def initialize(self, nick, config, identify=None):
+#        self.config = config
+#        self.identify = identify 
+#        self.nick = nick
+#        print(config)
+#        print(identify)
+
+    def recv_mode(self, message):
+        print(message)
+        print(len(message))
+        if (len(message) > 2):
+            self.nick[n] = message[1].split()[0]
+            print(self.nick[n])
+
     def endof_motd(self, message):
-        return "MODE {0} +B".format(botnick)
+        print(1337)
+        print("nick: %s" % self.nick[n])
+        return "MODE {0} +B".format(self.nick[n])
+
     def user_join(self, message):
+#        print(self.nick[n])
         print(message)
         channel = message[2][:-1]
         #print(channel)
         user = message[1].split('!')[0]
-        if user == botnick :
+        if user == self.nick[n] :
             self.channels[channel] = {}
             print("Joined channel " + channel)
             return "WHO %s\r\n" % channel
@@ -32,6 +50,7 @@ class Recv:
             return "WHO %s\r\n" % user
 
     def invite(self, message):
+        print(self.channels)
         channel = message[2]
         return "JOIN %s\r\n" % channel #WHO %s" % (channel, channel)
 
@@ -50,7 +69,7 @@ class Recv:
     #    print(username, userhost, userrole, userflags)
         self.channels[channel][usernick] = {'uname': username, 
             'uhost': userhost, 'urole': userrole, 'uflags': userflags}
-        Admins.giveAdmin(usernick)
+        Admins().giveAdmin(usernick)
 #        print(self.channels)
         return
 
@@ -60,19 +79,18 @@ class Recv:
     def user_gone(self, message):
         """User parted/kicked"""
         channel = message[2][:-1]
-        if message[1].split()[1] == PART:
+        if message[1].split()[1] == 'PART':
             user = message[1].split('!')[0]
         else: user = message[1].split()[-1:]
-        if user != botnick:
+        if user != self.nick:
             del self.channels[channel][user]
         else: del self.channels[channel]    
-        pass
 
     def user_quat(self, message):
         # checked; server kills/klines are also QUITs 
         channel = message[2][:-1]
         user = message[1].split('!')[0]
-        if user != botnick:
+        if user != self.nick[n]:
             del self.channels[channel][user]
         pass
 
@@ -82,7 +100,7 @@ class Recv:
         nickorig = message[1].split('!')[0].strip()
         nicknew = message[2].strip()
     #    print(channels)
-        if nickorig == botnick: botnick = nicknew
+        if nickorig == self.nick[n]: self.nick[n] = nicknew
         for item in list(self.channels.keys()):
             if nickorig in list(self.channels[item].keys()):
                 self.channels[item][nicknew] = self.channels[item][nickorig]
@@ -97,11 +115,15 @@ class Recv:
         pass
 
     def handler(self, raw_message):
+#        print(raw_message.encode('utf-8'))
         print(raw_message)
         message = raw_message.split(':')
         try:
             messageType = message[1].split()[1].strip()
+            print(messageType)
+            print(message)
             if messageType in list(self.handledTypes.keys()):
+                print(self.handledTypes[messageType])
                 return self.handledTypes[messageType](message)
             else: return
         except:
@@ -115,7 +137,7 @@ class Admins:
         self.admins = admins
 
     def isAdmin(self, user):
-        if self.admins[user] > 1: return True
+        return self.admins[user] > 1
 
     def level(self,user):
         return self.admins[user]
