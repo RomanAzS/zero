@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import time
 import socket
-from irc import Recv
+from events import Recv, initialize
 import sys
 import argparse
 import os.path
@@ -45,13 +43,11 @@ if not args.warnoff:
     if len(sys.argv) > 2 and config:
         print("WARNING: Some flags may override values set in config. Continue? (y/n)")
 
-# should do the thing with config stuff too sometime
-# since there's a warning for it and all
 HOST = args.hostname
-PORT = args.port or PORT
-NICK = args.nick or NICK
-IDENT = args.ident or IDENT
-REALNAME = args.realname or REALNAME
+if args.port != None: PORT = args.port
+if args.nick != None: NICK = args.nick
+if args.ident != None: IDENT = args.ident
+if args.realname != None: REALNAME = args.realname
 print("Connecting to {0} {1}..." .format(HOST, PORT))
 
 def start(loop):
@@ -64,10 +60,11 @@ def start(loop):
     #if args.identify != None: 
     #    time.sleep(2)
     #    s.send(("PRIVMSG NickServ identify {}".format(args.identify)).encode())
-#    Recv.initialize(NICK, config, args.identify)
+    initialize(NICK, config, args.identify)
     recieved = ""
+    loop = 0
     while loop == 0:
-        recieved = recieved + (s.recv(1024)).decode('utf-8')
+        recieved = recieved + (s.recv(1024)).decode()
         messages = recieved.split('\n')
         recieved = messages.pop()
 
@@ -75,7 +72,7 @@ def start(loop):
     #        print(line)
             stuff = Recv().handler(line)
             if stuff != None: 
-                s.send(stuff.encode('utf-8'))
+                s.send(stuff.encode())
             if line.startswith("ERROR"): loop = 19
     
 start(0)
