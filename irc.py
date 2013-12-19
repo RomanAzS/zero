@@ -6,13 +6,14 @@ def initialize(nick, config, identify=None):
     config = config
     identify = identify 
     botnick = nick
+    print(botnick)
     print(config)
     print(identify)
 
 class Recv:
     def __init__(self):
         self.channels = channels
-        self.handledTypes = {'JOIN': self.user_join, 'PART': self.user_part,
+        self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
                         'KICK': self.user_gone, 'NICK': self.user_nick,
@@ -20,6 +21,7 @@ class Recv:
     def endof_motd(self, message):
         return "MODE {0} +B".format(botnick)
     def user_join(self, message):
+        print(botnick)
         print(message)
         channel = message[2][:-1]
         #print(channel)
@@ -50,12 +52,10 @@ class Recv:
     #    print(username, userhost, userrole, userflags)
         self.channels[channel][usernick] = {'uname': username, 
             'uhost': userhost, 'urole': userrole, 'uflags': userflags}
-        Admins.giveAdmin(usernick)
+#        Admins.giveAdmin(usernick)
 #        print(self.channels)
         return
 
-    def user_part(self, message):
-        pass
 
     def user_gone(self, message):
         """User parted/kicked"""
@@ -104,7 +104,7 @@ class Recv:
             if messageType in list(self.handledTypes.keys()):
                 return self.handledTypes[messageType](message)
             else: return
-        except:
+        except IndexError:
             messageType = message[0].strip()
             if messageType == 'PING':
                 return "PONG %s\r\n" % message[1]
