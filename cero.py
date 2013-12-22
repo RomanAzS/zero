@@ -12,7 +12,7 @@ NICK = "cero"
 IDENT = "zero"
 REALNAME = "1.5"
 
-config = True
+isConfig = True
 
 # handles args from command line
 parser = argparse.ArgumentParser(description="Azi's bot v 1.5")
@@ -32,7 +32,7 @@ if not args.warnoff:
         def f():
             anser = input()
             if anser == 'y': 
-                config = False
+                isConfig = False
                 return
             elif anser == 'n':
                 print("Exiting.")
@@ -47,6 +47,7 @@ if not args.warnoff:
 
 # should do the thing with config stuff too sometime
 # since there's a warning for it and all
+
 HOST = args.hostname
 PORT = args.port or PORT
 NICK = args.nick or NICK

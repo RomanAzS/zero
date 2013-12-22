@@ -24,6 +24,7 @@ class Recv:
                         'QUIT': self.user_quat, 'PART': self.user_gone,
                         'KICK': self.user_gone, 'NICK': self.user_nick,
                         '376': self.endof_motd}
+
     def handler(self, raw_message, nick):
         NICK = nick
         try:
@@ -57,7 +58,7 @@ class Recv:
             print("Joined channel " + channel)
             return "WHO %s\r\n" % channel
         else:
-            return "WHO %s\r\n" % user
+            self.channels[channel][user] = message[1].split('!')[1].split('@')[1].split()[0]
 
     def invite(self, message, NICK):
         channel = message[2]
@@ -68,16 +69,13 @@ class Recv:
         msg = message[1].split()
         channel = msg[3]; 
         usernick = msg[7];
-        username = msg[4];
         userhost = msg[5]
-        userflags = msg[8]
         userrole = ''
-        if userflags[-1] in ['~', '%', '&', '+', '@']:
-            userrole = userflags[-1]
+#        if userflags[-1] in ['~', '%', '&', '+', '@']:
+#            userrole = userflags[-1]
     #        userflags = userflags[-1:]
     #    print(username, userhost, userrole, userflags)
-        self.channels[channel][usernick] = {'uname': username, 
-            'uhost': userhost, 'urole': userrole, 'uflags': userflags}
+        self.channels[channel][usernick] =  userhost#,'uflags': userflags}
 #        Admins.giveAdmin(usernick)
 #        print(self.channels)
         return
@@ -86,21 +84,27 @@ class Recv:
     def user_gone(self, message, NICK):
         """User parted/kicked"""
         channel = message[2][:-1]
-        if message[1].split()[1] == PART:
+        if message[1].split()[1] == 'PART':
+            channel = message[1].split()[-1:][0]
             user = message[1].split('!')[0]
-        else: user = message[1].split()[-1:]
+        else: 
+            user = message[1].split()[-1:][0]
+            channel = message[1].split()[2]
         if user != NICK.botnick():
             del self.channels[channel][user]
         else: del self.channels[channel]    
-        pass
 
     def user_quat(self, message, NICK):
         # checked; server kills/klines are also QUITs 
         channel = message[2][:-1]
+        print(self.channels)
         user = message[1].split('!')[0]
-        if user != NICK.botnick():
-            del self.channels[channel][user]
-        pass
+        print(user)
+#        if user != NICK.botnick():
+#            del self.channels[channel][user]
+        for chan in self.channels.keys():
+            if user not in self.channels[chan].keys(): 
+                del self.channels[chan][user]
 
     def user_nick(self, message, NICK):
         """When a user changes their nick remap their entry in chan dict
@@ -135,7 +139,8 @@ class Admins:
     #somewhere in this mess, check whether new arrivals are in admin conf
     # start using config files?
     def giveAdmin(self, user):
-        print(config)
+#        print(config)
+        config = False
         user = user.lower()
         print(self.admins)
         if config:
