@@ -2,7 +2,7 @@
 
 import time
 import socket
-from irc import Recv, initialize
+from irc import Recv, Nick
 import sys
 import argparse
 import os.path
@@ -54,17 +54,19 @@ IDENT = args.ident or IDENT
 REALNAME = args.realname or REALNAME
 print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
+nick = Nick(NICK)
+print(Nick)
 def start(loop):
     s = socket.socket()
     s.connect((HOST, PORT)) # connect to host and port
     s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
     #s.send(("MODE {0} +B".format(NICK)).encode())
+    
 
     #if args.identify != None: 
     #    time.sleep(2)
     #    s.send(("PRIVMSG NickServ identify {}".format(args.identify)).encode())
-    initialize(NICK, config, args.identify)
     recieved = ""
     while loop == 0:
         recieved = recieved + (s.recv(1024)).decode('utf-8')
@@ -73,7 +75,7 @@ def start(loop):
 
         for line in messages:
     #        print(line)
-            stuff = Recv().handler(line)
+            stuff = Recv().handler(line, nick)
             if stuff != None: 
                 s.send(stuff.encode('utf-8'))
             if line.startswith("ERROR"): loop = 19
