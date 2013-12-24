@@ -17,13 +17,14 @@ isConfig = True
 # handles args from command line
 parser = argparse.ArgumentParser(description="Azi's bot v 1.5")
 parser.add_argument("hostname", help="server hostname to connect to", type=str)
-parser.add_argument("-p", "--port", help="specify port number to use",type=int)
+parser.add_argument("-p", "--port", help="specify port number to use",type=int, default=6667)
 parser.add_argument("-P", "--pass", help="server password for authentication", type=str)
 parser.add_argument("-w", "--warnoff", help="disable warnings", action="store_true")
-parser.add_argument("-I", "--ident", help="specify ident", type=str)
+parser.add_argument("-I", "--ident", help="specify ident", type=str, default='zero')
 parser.add_argument("-i", "--identify", help="password for NickServ identification", type=str)
-parser.add_argument("-n", "--nick", help="use a different nick than default", type=str)
-parser.add_argument("-r", "--realname",help="specify bot's realname", type=str)
+parser.add_argument("-n", "--nick", help="use a different nick than default", type=str, default='cero')
+parser.add_argument("-r", "--realname",help="specify bot's realname", type=str, default='1.5')
+parser.add_argument("-j", "--join", help="specify channels to join", type=str)
 args = parser.parse_args()
 
 if not args.warnoff:
@@ -49,10 +50,11 @@ if not args.warnoff:
 # since there's a warning for it and all
 
 HOST = args.hostname
-PORT = args.port or PORT
-NICK = args.nick or NICK
-IDENT = args.ident or IDENT
-REALNAME = args.realname or REALNAME
+#PORT = args.port or PORT
+#NICK = args.nick or NICK
+#IDENT = args.ident or IDENT
+#REALNAME = args.realname or REALNAME
+print(args.join)
 print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
 nick = Nick(NICK)
@@ -62,12 +64,7 @@ def start(loop):
     s.connect((HOST, PORT)) # connect to host and port
     s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
-    #s.send(("MODE {0} +B".format(NICK)).encode())
-    
 
-    #if args.identify != None: 
-    #    time.sleep(2)
-    #    s.send(("PRIVMSG NickServ identify {}".format(args.identify)).encode())
     recieved = ""
     while loop == 0:
         recieved = recieved + (s.recv(1024)).decode('utf-8')
@@ -75,7 +72,6 @@ def start(loop):
         recieved = messages.pop()
 
         for line in messages:
-    #        print(line)
             stuff = Recv().handler(line, nick)
             if stuff != None: 
                 s.send(stuff.encode('utf-8'))

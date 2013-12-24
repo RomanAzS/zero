@@ -9,7 +9,6 @@ class Nick:
     def __init__(self, nick):
         self.nick = nick
         print("nick is %s" % self.nick)
-        pass
     def update(self, nick):
         self.nick = nick
         print("nick changed to %s" % nick)
@@ -17,20 +16,23 @@ class Nick:
         return self.nick
 
 class Recv:
+    """For dealing with recieved messages"""
     def __init__(self):
         self.channels = channels
+        self.privmsg = Privmsg()
         self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
                         'KICK': self.user_gone, 'NICK': self.user_nick,
-                        '376': self.endof_motd}
+                        '376': self.endof_motd, 'PRIVMSG': self.privmsg.hook}
 
     def handler(self, raw_message, nick):
+        """Decide what to do with incoming message"""
         NICK = nick
         try:
             print(raw_message)
         except UnicodeEncodeError: print(raw_message.encode())
-        message = raw_message.split(':')
+        message = raw_message.split(':', 2)
         try:
             messageType = message[1].split()[1].strip()
             if messageType in list(self.handledTypes.keys()):
@@ -51,14 +53,14 @@ class Recv:
         print(nick)
         print(message)
         channel = message[2][:-1]
-        #print(channel)
         user = message[1].split('!')[0]
         if user == nick :
             self.channels[channel] = {}
             print("Joined channel " + channel)
             return "WHO %s\r\n" % channel
         else:
-            self.channels[channel][user] = message[1].split('!')[1].split('@')[1].split()[0]
+            host = message[1].split('!')[1].split('@')[1].split()[0]
+            self.channels[channel][user] = host
 
     def invite(self, message, NICK):
         channel = message[2]
@@ -67,17 +69,16 @@ class Recv:
     def who_reply(self, message, NICK):
         #    print(message)
         msg = message[1].split()
-        channel = msg[3]; 
-        usernick = msg[7];
+        channel = msg[3] 
+        usernick = msg[7]
         userhost = msg[5]
-        userrole = ''
+#        userrole = ''
 #        if userflags[-1] in ['~', '%', '&', '+', '@']:
 #            userrole = userflags[-1]
     #        userflags = userflags[-1:]
     #    print(username, userhost, userrole, userflags)
-        self.channels[channel][usernick] =  userhost#,'uflags': userflags}
+        self.channels[channel][usernick] =  userhost
 #        Admins.giveAdmin(usernick)
-#        print(self.channels)
         return
 
 
@@ -95,13 +96,9 @@ class Recv:
         else: del self.channels[channel]    
 
     def user_quat(self, message, NICK):
-        # checked; server kills/klines are also QUITs 
-        channel = message[2][:-1]
         print(self.channels)
         user = message[1].split('!')[0]
         print(user)
-#        if user != NICK.botnick():
-#            del self.channels[channel][user]
         for chan in self.channels.keys():
             if user not in self.channels[chan].keys(): 
                 del self.channels[chan][user]
@@ -111,16 +108,15 @@ class Recv:
         to their new nick"""
         nickorig = message[1].split('!')[0].strip()
         nicknew = message[2].strip()
-    #    print(channels)
         if nickorig == NICK.botnick(): NICK.update(nicknew)
         for item in list(self.channels.keys()):
             if nickorig in list(self.channels[item].keys()):
                 self.channels[item][nicknew] = self.channels[item][nickorig]
                 del self.channels[item][nickorig]
 
-    def privmsg(self, message, NICK):
-
-        pass
+#    def privmsg(self, message, NICK):
+#        Privmsg().hook(message)
+        
 
     def notice(self, message, NICK):
         """For integrating services functionality"""
@@ -150,9 +146,21 @@ class Admins:
             if user not in self.admins.keys():
                 self.admins[user] = 1
                 print(self.admins)
+    def ignore(self, user):
+        self.admins[user] = 0
+    def promote(self, user):
+        self.admins[user] = self.admins[user] + 1
 
 class Privmsg:
     def __init__(self):
         self.commands = set()
-
+        self.hooks = {}
+        self.prefix = {'norm': '.', 'admin': '^'}
+    def hook(self, msg, x):
+        user = msg[1].split('!')[0]
+        host = msg[1].split()[0].split('@')[1]
+        message = msg[2]
+        first = message.split()[0]
+        if first in self.hooks.keys():
+            self.hooks[first](user, host, message)
 
