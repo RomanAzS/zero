@@ -7,11 +7,6 @@ import sys
 import argparse
 import os.path
 
-PORT = 6667
-NICK = "cero"
-IDENT = "zero"
-REALNAME = "1.5"
-
 isConfig = True
 
 # handles args from command line
@@ -50,10 +45,10 @@ if not args.warnoff:
 # since there's a warning for it and all
 
 HOST = args.hostname
-#PORT = args.port or PORT
-#NICK = args.nick or NICK
-#IDENT = args.ident or IDENT
-#REALNAME = args.realname or REALNAME
+PORT = args.port 
+NICK = args.nick 
+IDENT = args.ident 
+REALNAME = args.realname 
 print(args.join)
 print("Connecting to {0}:{1}..." .format(HOST, PORT))
 

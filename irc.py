@@ -96,9 +96,7 @@ class Recv:
         else: del self.channels[channel]    
 
     def user_quat(self, message, NICK):
-        print(self.channels)
         user = message[1].split('!')[0]
-        print(user)
         for chan in self.channels.keys():
             if user not in self.channels[chan].keys(): 
                 del self.channels[chan][user]
@@ -126,10 +124,11 @@ class Admins:
     """Stuff for checking adminship"""
     def __init__(self):
         self.admins = admins
-
+    # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
     def isAdmin(self, user):
         if self.admins[user] > 1: return True
-
+    def isIgnored(self, user):
+        if self.admins[user] < 1: return True
     def level(self,user):
         return self.admins[user]
     #somewhere in this mess, check whether new arrivals are in admin conf
@@ -153,14 +152,16 @@ class Admins:
 
 class Privmsg:
     def __init__(self):
-        self.commands = set()
+        # hooks should be commandname: (function, adminlevel)
         self.hooks = {}
-        self.prefix = {'norm': '.', 'admin': '^'}
+#        self.prefix = {'norm': '.', 'admin': '^'}
     def hook(self, msg, x):
         user = msg[1].split('!')[0]
         host = msg[1].split()[0].split('@')[1]
+        channel = msg[1].split()[2].strip()
         message = msg[2]
-        first = message.split()[0]
-        if first in self.hooks.keys():
-            self.hooks[first](user, host, message)
+        hook = message.split()[0]
+        if hook not in self.hooks.keys(): return
+        elif Admins().level >= self.hooks[hook][1]:
+            self.hooks[hook][0](user, host, channel, message)
 
