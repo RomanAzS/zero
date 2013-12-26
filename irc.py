@@ -126,11 +126,11 @@ class Admins:
         self.admins = admins
     # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
     def isAdmin(self, user):
-        if self.admins[user] > 1: return True
+        return self.admins[user.lower()] > 1
     def isIgnored(self, user):
-        if self.admins[user] < 1: return True
+        return self.admins[user.lower()] < 1
     def level(self,user):
-        return self.admins[user]
+        return self.admins[user.lower()]
     #somewhere in this mess, check whether new arrivals are in admin conf
     # start using config files?
     def giveAdmin(self, user):
