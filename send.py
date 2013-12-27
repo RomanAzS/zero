@@ -1,5 +1,5 @@
 def msg(channel, message):
-    return "PRIVMSG %s %s\r\n" (channel, message)
+    return "PRIVMSG %s %s\r\n" % (channel, message)
 
 def who(target):
     return "WHO %s\r\n" % target

@@ -2,7 +2,7 @@
 
 import time
 import socket
-from irc import Recv, Nick
+from irc import Recv, Nick, Options
 import sys
 import argparse
 import os.path
@@ -53,6 +53,9 @@ print(args.join)
 print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
 nick = Nick(NICK)
+opt = Options()
+opt.args(isConfig, args.join, args.identify)
+recv = Recv(opt).handler
 print(Nick)
 def start(loop):
     s = socket.socket()
@@ -67,7 +70,7 @@ def start(loop):
         recieved = messages.pop()
 
         for line in messages:
-            stuff = Recv().handler(line, nick)
+            stuff = recv(line, nick)
             if stuff != None: 
                 s.send(stuff.encode('utf-8'))
             if line.startswith("ERROR"): loop = 19

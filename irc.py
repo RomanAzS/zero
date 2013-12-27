@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from plugins.omdb import imdb
+from plugins.last import History
 channels = {}
 admins = {"kojiro":4}
 botnick = 'cero' 
@@ -15,11 +17,60 @@ class Nick:
     def botnick(self): 
         return self.nick
 
+class Options:
+    """Gets the args from the command line"""
+    def __init__(self):
+        self.config = None
+        self.ajoin = None
+        self.nickserv = None
+    def args(self, config, autojoin, identify):
+        self.nickserv = identify
+        self.ajoin = autojoin
+        self.config = config
+    
+
+class Admins:
+    """Stuff for checking adminship"""
+    def __init__(self):
+        self.admins = admins
+    # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
+    def isAdmin(self, user):
+        return self.admins[user.lower()] > 1
+    def isIgnored(self, user):
+        return self.admins[user.lower()] < 1
+    def level(self,user):
+        print(self.admins)
+        return self.admins[user.lower()]
+    #somewhere in this mess, check whether new arrivals are in admin conf
+    # start using config files?
+    def giveAdmin(self, user):
+#        print(config)
+        config = False
+        user = user.lower()
+#        print(self.admins)
+        if config:
+            # open cofig, get information, havent worked out conf yet
+            pass
+        else: 
+            if user not in self.admins.keys():
+                self.admins[user] = 1
+#                print(self.admins)
+    def ignore(self, user):
+        self.admins[user] = 0
+    def promote(self, user):
+        self.admins[user] = self.admins[user] + 1
+
+admins = Admins()
+history = History()
+#options = None
 class Recv:
     """For dealing with recieved messages"""
-    def __init__(self):
+    def __init__(self, optobj):
         self.channels = channels
-        self.privmsg = Privmsg()
+        self.options = optobj
+#        options = optobj
+        self.history = history
+        self.privmsg = Privmsg(self.history)
         self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
@@ -29,12 +80,12 @@ class Recv:
     def handler(self, raw_message, nick):
         """Decide what to do with incoming message"""
         NICK = nick
-        try:
-            print(raw_message)
-        except UnicodeEncodeError: print(raw_message.encode())
         message = raw_message.split(':', 2)
         try:
             messageType = message[1].split()[1].strip()
+            try:
+                print(raw_message)
+            except UnicodeEncodeError: print(raw_message.encode())
             if messageType in list(self.handledTypes.keys()):
                 return self.handledTypes[messageType](message, NICK)
             else: return
@@ -44,22 +95,26 @@ class Recv:
                 return "PONG %s\r\n" % message[1]
 
     def endof_motd(self, message, NICK):
-#        return "MODE {0} +B".format(botnick)
+        if self.options.nickserv: 
+            return "MODE {0} +B\r\nPRIVMSG NickServ identify {1}".format(NICK.botnick(), self.options.nickserv)
+        return "MODE {0} +B\r\n".format(NICK.botnick())
         pass
 
     def user_join(self, message, NICK):
-        print(Nick)
         nick = NICK.botnick()
-        print(nick)
-        print(message)
+#        print(nick)
+#        print(message)
         channel = message[2][:-1]
         user = message[1].split('!')[0]
         if user == nick :
             self.channels[channel] = {}
             print("Joined channel " + channel)
+            self.history.newchan(channel)
             return "WHO %s\r\n" % channel
         else:
             host = message[1].split('!')[1].split('@')[1].split()[0]
+            admins.giveAdmin(user)
+            print(user)
             self.channels[channel][user] = host
 
     def invite(self, message, NICK):
@@ -78,7 +133,7 @@ class Recv:
     #        userflags = userflags[-1:]
     #    print(username, userhost, userrole, userflags)
         self.channels[channel][usernick] =  userhost
-#        Admins.giveAdmin(usernick)
+        admins.giveAdmin(usernick)
         return
 
 
@@ -98,7 +153,7 @@ class Recv:
     def user_quat(self, message, NICK):
         user = message[1].split('!')[0]
         for chan in self.channels.keys():
-            if user not in self.channels[chan].keys(): 
+            if user in self.channels[chan].keys(): 
                 del self.channels[chan][user]
 
     def user_nick(self, message, NICK):
@@ -120,48 +175,28 @@ class Recv:
         """For integrating services functionality"""
         pass
 
-class Admins:
-    """Stuff for checking adminship"""
-    def __init__(self):
-        self.admins = admins
-    # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
-    def isAdmin(self, user):
-        return self.admins[user.lower()] > 1
-    def isIgnored(self, user):
-        return self.admins[user.lower()] < 1
-    def level(self,user):
-        return self.admins[user.lower()]
-    #somewhere in this mess, check whether new arrivals are in admin conf
-    # start using config files?
-    def giveAdmin(self, user):
-#        print(config)
-        config = False
-        user = user.lower()
-        print(self.admins)
-        if config:
-            # open cofig, get information, havent worked out conf yet
-            pass
-        else: 
-            if user not in self.admins.keys():
-                self.admins[user] = 1
-                print(self.admins)
-    def ignore(self, user):
-        self.admins[user] = 0
-    def promote(self, user):
-        self.admins[user] = self.admins[user] + 1
-
 class Privmsg:
-    def __init__(self):
+    def __init__(self, historyobj):
         # hooks should be commandname: (function, adminlevel)
-        self.hooks = {}
+        self.last = historyobj
+        self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
+                        '``': (self.raw, 4)}
 #        self.prefix = {'norm': '.', 'admin': '^'}
+        self.pm = False
     def hook(self, msg, x):
         user = msg[1].split('!')[0]
         host = msg[1].split()[0].split('@')[1]
         channel = msg[1].split()[2].strip()
         message = msg[2]
+        if channel == x.botnick(): self.pm = True
+        else: self.last.recv_msg(user, channel, message)
         hook = message.split()[0]
+        msgsanshook = message.replace(hook, '', 1).strip()
         if hook not in self.hooks.keys(): return
-        elif Admins().level >= self.hooks[hook][1]:
-            self.hooks[hook][0](user, host, channel, message)
-
+        elif admins.level(user) >= self.hooks[hook][1]:
+            return self.hooks[hook][0](user, host, channel, msgsanshook)
+    def raw(self, user, host, channel, msg):
+        print(msg, self.pm)
+        if self.pm: 
+            print(msg)
+            return msg + '\r\n'
