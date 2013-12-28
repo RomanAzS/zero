@@ -65,7 +65,7 @@ def start(loop):
 
     recieved = ""
     while loop == 0:
-        recieved = recieved + (s.recv(1024)).decode('utf-8')
+        recieved = recieved + (s.recv(4096)).decode('utf-8', 'ignore')
         messages = recieved.split('\n')
         recieved = messages.pop()
 
