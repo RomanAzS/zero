@@ -65,11 +65,12 @@ history = History()
 #options = None
 class Recv:
     """For dealing with recieved messages"""
-    def __init__(self, optobj):
+    def __init__(self, optobj, send):
         self.channels = channels
         self.options = optobj
 #        options = optobj
         self.history = history
+        self.s = send
         self.privmsg = Privmsg(self.history)
         self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
@@ -92,11 +93,12 @@ class Recv:
         except IndexError:
             messageType = message[0].strip()
             if messageType == 'PING':
-                return "PONG %s\r\n" % message[1]
+#                return "PONG %s\r\n" % message[1]
+                self.s.pong(message[1])
 
     def endof_motd(self, message, NICK):
         if self.options.nickserv: 
-            return "MODE {0} +B\r\nPRIVMSG NickServ identify {1}".format(NICK.botnick(), self.options.nickserv)
+            return "MODE {0} +B\r\nPRIVMSG NickServ :identify {1}".format(NICK.botnick(), self.options.nickserv)
         return "MODE {0} +B\r\n".format(NICK.botnick())
         pass
 
@@ -104,13 +106,14 @@ class Recv:
         nick = NICK.botnick()
 #        print(nick)
 #        print(message)
-        channel = message[2][:-1]
+        channel = message[2][:-1].lower()
         user = message[1].split('!')[0]
         if user == nick :
             self.channels[channel] = {}
             print("Joined channel " + channel)
             self.history.newchan(channel)
-            return "WHO %s\r\n" % channel
+#            return "WHO %s\r\n" % channel
+            self.s.who(channel)
         else:
             host = message[1].split('!')[1].split('@')[1].split()[0]
             admins.giveAdmin(user)
@@ -119,13 +122,14 @@ class Recv:
 
     def invite(self, message, NICK):
         channel = message[2]
-        return "JOIN %s\r\n" % channel #WHO %s" % (channel, channel)
+        self.s.join(channel)
+#        return "JOIN %s\r\n" % channel #WHO %s" % (channel, channel)
 
     def who_reply(self, message, NICK):
         #    print(message)
         msg = message[1].split()
-        channel = msg[3] 
-        usernick = msg[7]
+        channel = msg[3].lower()
+        usernick = msg[7].lower()
         userhost = msg[5]
 #        userrole = ''
 #        if userflags[-1] in ['~', '%', '&', '+', '@']:
@@ -139,7 +143,7 @@ class Recv:
 
     def user_gone(self, message, NICK):
         """User parted/kicked"""
-        channel = message[2][:-1]
+        channel = message[2][:-1].lower()
         if message[1].split()[1] == 'PART':
             channel = message[1].split()[-1:][0]
             user = message[1].split('!')[0]
@@ -151,7 +155,7 @@ class Recv:
         else: del self.channels[channel]    
 
     def user_quat(self, message, NICK):
-        user = message[1].split('!')[0]
+        user = message[1].split('!')[0].lower()
         for chan in self.channels.keys():
             if user in self.channels[chan].keys(): 
                 del self.channels[chan][user]
@@ -159,8 +163,8 @@ class Recv:
     def user_nick(self, message, NICK):
         """When a user changes their nick remap their entry in chan dict
         to their new nick"""
-        nickorig = message[1].split('!')[0].strip()
-        nicknew = message[2].strip()
+        nickorig = message[1].split('!')[0].strip().lower()
+        nicknew = message[2].strip().lower()
         if nickorig == NICK.botnick(): NICK.update(nicknew)
         for item in list(self.channels.keys()):
             if nickorig in list(self.channels[item].keys()):
@@ -186,7 +190,8 @@ class Privmsg:
     def hook(self, msg, x):
         user = msg[1].split('!')[0]
         host = msg[1].split()[0].split('@')[1]
-        channel = msg[1].split()[2].strip()
+        channel = msg[1].split()[2].strip().lower()
+        print(channel)
         message = msg[2]
         if channel == x.botnick(): self.pm = True
         else: self.last.recv_msg(user, channel, message)
@@ -200,3 +205,29 @@ class Privmsg:
         if self.pm: 
             print(msg)
             return msg + '\r\n'
+
+class Send:
+    def __init__(self, sock):
+        self.sock = sock
+    def msg(self, channel, message):
+        self.sock.send(("PRIVMSG %s %s\r\n" % (channel, message)).encode())
+    def who(self, target):
+        self.sock.send( ("WHO %s\r\n" % target).encode())
+    def quit(self, message=None):
+        if message is not None: self.sock.send(("QUIT %s\r\n" % message).encode())
+        else: self.sock.send(("QUIT Bot 1.5\r\n").encode())
+    def join(self, channel):
+        self.sock.send(("JOIN %s\r\n" % channel).encode())
+    def part(self, channel, message=None):
+        if message is not None: self.sock.send("PART {0} {1}\r\n".format(channel, message).encode())
+        else: self.sock.send("PART {0} Leaving\r\n".format(channel).encode())
+    def cycle(self, channel):
+        self.sock.send(("PART %s\r\nJOIN %s\r\n" % (channel, channel)).encode())
+    def nick(self, newnick):
+        #the bot also needs to have its own nick stored somewhere & this will 
+        #change that entry
+        self.sock.send(("NICK %s\r\n" % newnick).encode())
+    def pong(self, target):
+        self.sock.send(("PONG %s\r\n" % target).encode())
+    def notice(self, target, message):
+        self.sock.send("NOTICE {0} {1}\r\n".format(target, message).encode())

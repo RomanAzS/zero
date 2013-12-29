@@ -2,7 +2,7 @@
 
 import time
 import socket
-from irc import Recv, Nick, Options
+from irc import Recv, Nick, Options, Send
 import sys
 import argparse
 import os.path
@@ -38,7 +38,8 @@ if not args.warnoff:
                 f()
         f()
 
-    if len(sys.argv) > 2 and config:
+
+    if len(sys.argv) > 2 and isConfig:
         print("WARNING: Some flags may override values set in config. Continue? (y/n)")
 
 # should do the thing with config stuff too sometime
@@ -55,14 +56,15 @@ print("Connecting to {0}:{1}..." .format(HOST, PORT))
 nick = Nick(NICK)
 opt = Options()
 opt.args(isConfig, args.join, args.identify)
-recv = Recv(opt).handler
 print(Nick)
 def start(loop):
     s = socket.socket()
     s.connect((HOST, PORT)) # connect to host and port
     s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
-
+    
+    sand = Send(s)
+    recv = Recv(opt, sand).handler
     recieved = ""
     while loop == 0:
         recieved = recieved + (s.recv(4096)).decode('utf-8', 'ignore')

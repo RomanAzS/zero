@@ -6,8 +6,6 @@
 
 from json import loads
 from urllib.request import urlopen
-import send
-
 
 def omdbSearch(query):
     try:
