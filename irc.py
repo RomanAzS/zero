@@ -107,7 +107,7 @@ class Recv:
 #        print(nick)
 #        print(message)
         channel = message[2][:-1].lower()
-        user = message[1].split('!')[0]
+        user = message[1].split('!')[0].lower()
         if user == nick :
             self.channels[channel] = {}
             print("Joined channel " + channel)
@@ -143,13 +143,12 @@ class Recv:
 
     def user_gone(self, message, NICK):
         """User parted/kicked"""
-        channel = message[2][:-1].lower()
         if message[1].split()[1] == 'PART':
-            channel = message[1].split()[-1:][0]
-            user = message[1].split('!')[0]
+            channel = message[1].split()[-1:][0].lower()
+            user = message[1].split('!')[0].lower()
         else: 
-            user = message[1].split()[-1:][0]
-            channel = message[1].split()[2]
+            user = message[1].split()[-1:][0].lower()
+            channel = message[1].split()[2].lower()
         if user != NICK.botnick():
             del self.channels[channel][user]
         else: del self.channels[channel]    
