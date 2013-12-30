@@ -20,6 +20,7 @@ parser.add_argument("-i", "--identify", help="password for NickServ identificati
 parser.add_argument("-n", "--nick", help="use a different nick than default", type=str, default='cero')
 parser.add_argument("-r", "--realname",help="specify bot's realname", type=str, default='1.5')
 parser.add_argument("-j", "--join", help="specify channels to join", type=str)
+parser.add_argument("-a", "--admin", help="add admin level 4", type=str)
 args = parser.parse_args()
 
 if not args.warnoff:
@@ -55,7 +56,7 @@ print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
 nick = Nick(NICK)
 opt = Options()
-opt.args(isConfig, args.join, args.identify)
+opt.args(isConfig, args.join, args.identify, args.admin)
 print(Nick)
 def start(loop):
     s = socket.socket()

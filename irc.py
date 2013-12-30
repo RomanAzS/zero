@@ -23,16 +23,17 @@ class Options:
         self.config = None
         self.ajoin = None
         self.nickserv = None
-    def args(self, config, autojoin, identify):
+    def args(self, config, autojoin, identify, admin):
         self.nickserv = identify
         self.ajoin = autojoin
         self.config = config
+        self.admins = {admin: 4} or admins
     
 
 class Admins:
     """Stuff for checking adminship"""
-    def __init__(self):
-        self.admins = admins
+    def __init__(self, opt):
+        self.admins = opt.admins
     # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
     def isAdmin(self, user):
         return self.admins[user.lower()] > 1
@@ -60,7 +61,6 @@ class Admins:
     def promote(self, user):
         self.admins[user] = self.admins[user] + 1
 
-admins = Admins()
 history = History()
 #options = None
 class Recv:
@@ -69,14 +69,16 @@ class Recv:
         self.channels = channels
         self.options = optobj
 #        options = optobj
+        self.admins = Admins(self.options)
         self.history = history
         self.s = send
-        self.privmsg = Privmsg(self.history)
+        self.privmsg = Privmsg(self.history, self.admins)
         self.handledTypes = {'JOIN': self.user_join, 
                         'INVITE': self.invite,  '352': self.who_reply, 
                         'QUIT': self.user_quat, 'PART': self.user_gone,
                         'KICK': self.user_gone, 'NICK': self.user_nick,
-                        '376': self.endof_motd, 'PRIVMSG': self.privmsg.hook}
+                        '376': self.endof_motd, '422': self.endof_motd,
+                        'PRIVMSG': self.privmsg.hook}
 
     def handler(self, raw_message, nick):
         """Decide what to do with incoming message"""
@@ -116,7 +118,7 @@ class Recv:
             self.s.who(channel)
         else:
             host = message[1].split('!')[1].split('@')[1].split()[0]
-            admins.giveAdmin(user)
+            self.admins.giveAdmin(user)
             print(user)
             self.channels[channel][user] = host
 
@@ -137,7 +139,7 @@ class Recv:
     #        userflags = userflags[-1:]
     #    print(username, userhost, userrole, userflags)
         self.channels[channel][usernick] =  userhost
-        admins.giveAdmin(usernick)
+        self.admins.giveAdmin(usernick)
         return
 
 
@@ -178,10 +180,13 @@ class Recv:
         """For integrating services functionality"""
         pass
 
+#admins = Admins(options)
+
 class Privmsg:
-    def __init__(self, historyobj):
+    def __init__(self, historyobj, adminobj):
         # hooks should be commandname: (function, adminlevel)
         self.last = historyobj
+        self.admins = adminobj
         self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
                         '``': (self.raw, 4)}
 #        self.prefix = {'norm': '.', 'admin': '^'}
@@ -197,7 +202,7 @@ class Privmsg:
         hook = message.split()[0]
         msgsanshook = message.replace(hook, '', 1).strip()
         if hook not in self.hooks.keys(): return
-        elif admins.level(user) >= self.hooks[hook][1]:
+        elif self.admins.level(user) >= self.hooks[hook][1]:
             return self.hooks[hook][0](user, host, channel, msgsanshook)
     def raw(self, user, host, channel, msg):
         print(msg, self.pm)
