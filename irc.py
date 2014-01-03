@@ -27,7 +27,7 @@ class Options:
         self.nickserv = identify
         self.ajoin = autojoin
         self.config = config
-        self.admins = {admin: 4} or admins
+        self.admins = {admin: 4} or {"kojiro": 4}
     
 
 class Admins:
@@ -56,6 +56,9 @@ class Admins:
             if user not in self.admins.keys():
                 self.admins[user] = 1
 #                print(self.admins)
+    def changeNick(self, old, new):
+        self.admins[new] = self.admins[old]
+        del self.admins[old]
     def ignore(self, user):
         self.admins[user] = 0
     def promote(self, user):
@@ -151,6 +154,7 @@ class Recv:
         else: 
             user = message[1].split()[-1:][0].lower()
             channel = message[1].split()[2].lower()
+            print(user,channel, self.channels)
         if user != NICK.botnick():
             del self.channels[channel][user]
         else: del self.channels[channel]    
@@ -171,6 +175,7 @@ class Recv:
             if nickorig in list(self.channels[item].keys()):
                 self.channels[item][nicknew] = self.channels[item][nickorig]
                 del self.channels[item][nickorig]
+        self.admins.changeNick(nickorig, nicknew)
 
 #    def privmsg(self, message, NICK):
 #        Privmsg().hook(message)
