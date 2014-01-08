@@ -98,8 +98,8 @@ class Recv:
         except IndexError:
             messageType = message[0].strip()
             if messageType == 'PING':
-#                return "PONG %s\r\n" % message[1]
-                self.s.pong(message[1])
+                return "PONG %s\r\n" % message[1]
+#                self.s.pong(message[1])
 
     def endof_motd(self, message, NICK):
         if self.options.nickserv: 

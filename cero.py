@@ -60,6 +60,7 @@ opt.args(isConfig, args.join, args.identify, args.admin)
 print(Nick)
 def start(loop):
     s = socket.socket()
+    s.settimeout(300)
     s.connect((HOST, PORT)) # connect to host and port
     s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
@@ -67,15 +68,46 @@ def start(loop):
     sand = Send(s)
     recv = Recv(opt, sand).handler
     recieved = ""
+    t = time.time()
     while loop == 0:
-        recieved = recieved + (s.recv(4096)).decode('utf-8', 'ignore')
-        messages = recieved.split('\n')
-        recieved = messages.pop()
+        try:
+            recieved = recieved + (s.recv(4096)).decode('utf-8', 'ignore')
+            messages = recieved.split('\n')
+            recieved = messages.pop()
 
-        for line in messages:
-            stuff = recv(line, nick)
-            if stuff != None: 
-                s.send(stuff.encode('utf-8'))
-            if line.startswith("ERROR"): loop = 19
-    
+            for line in messages:
+                stuff = recv(line, nick)
+                if stuff != None: 
+                    s.send(stuff.encode('utf-8'))
+                    t = round(time.time())
+                elif (time.time() - t) > 150:
+                    s.send(("PONG %s" % HOST).encode('utf-8'))
+                    print('sent pong')
+                if line.startswith("ERROR"): loop = 9
+
+        except ConnectionResetError:
+            start(0)
+            break
+        except socket.timeout:
+            print('TIMED OUT')
+            start(0)
+            break
+
 start(0)
+
+# class Connected:
+#     def __init__(self, socket, server):
+#         self.sock = socket
+#         self.serv = server
+#         self.connected = True
+#         self.timePing = 0
+#         self.timePong = 0
+#     def sendPing():
+#         while self.connected:
+#             self.sock.send(("PING %s" % self.serv).encode())
+#             self.timePing = time.time()
+#             time.sleep(60)
+#     def recvPong():
+#         self.timePong = time.time()
+#         timesince = math.fabs(self.timePong - self.timePing)
+#         if (math.fabs(self.timePing - time.time())) > 300: start(0)
