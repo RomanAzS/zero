@@ -28,7 +28,9 @@ class Options:
         self.ajoin = autojoin
         self.config = config
         self.admins = {admin: 4} or {"kojiro": 4}
-    
+    def ret(self):
+        turn = {'ns': self.nickserv, 'join': self.ajoin, 'conf': self.config}
+        return turn
 
 class Admins:
     """Stuff for checking adminship"""
@@ -102,10 +104,20 @@ class Recv:
 #                self.s.pong(message[1])
 
     def endof_motd(self, message, NICK):
-        if self.options.nickserv: 
-            return "MODE {0} +B\r\nPRIVMSG NickServ :identify {1}".format(NICK.botnick(), self.options.nickserv)
-        return "MODE {0} +B\r\n".format(NICK.botnick())
-        pass
+        print(self.options.ret())
+        ret = self.options.ret()
+        ns = ret['ns']
+        join = ''
+        if len(self.channels) == 0 and ret['join'] is not None: 
+            join = "JOIN %s\r\n" % ret['join']
+        elif len(self.channels) > 0: 
+        #bc if it dc'd the chan dict doesnt get deleted so rejoin yeah
+            j = ','.join(self.channels.keys())
+            join = "JOIN %s\r\n" % j
+        
+        if ns is not None: 
+            return "MODE {0} +B\r\nPRIVMSG NickServ :identify {1}\r\n{2}".format(NICK.botnick(), self.options.nickserv, join)
+        return "MODE {0} +B\r\n{1}".format(NICK.botnick(), join)
 
     def user_join(self, message, NICK):
         nick = NICK.botnick()

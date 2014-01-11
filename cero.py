@@ -57,12 +57,13 @@ print("Connecting to {0}:{1}..." .format(HOST, PORT))
 nick = Nick(NICK)
 opt = Options()
 opt.args(isConfig, args.join, args.identify, args.admin)
+print(args.join)
 print(Nick)
 def start(loop):
     s = socket.socket()
     s.settimeout(300)
     s.connect((HOST, PORT)) # connect to host and port
-    s.send(("NICK %s\r\n" % NICK).encode()) # send nickname
+    s.send(("NICK %s\r\n" % nick.nick).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
     
     sand = Send(s)
@@ -83,13 +84,18 @@ def start(loop):
                 elif (time.time() - t) > 150:
                     s.send(("PONG %s" % HOST).encode('utf-8'))
                     print('sent pong')
-                if line.startswith("ERROR"): loop = 9
+                if line.startswith("ERROR"): 
+                    if 'quit' not in line.lower():
+                        start(0)
+                        loop = 9
+                    else: loop = 9
 
         except ConnectionResetError:
+            print('CONNECTION RESET\nReconnecting...')
             start(0)
             break
         except socket.timeout:
-            print('TIMED OUT')
+            print('TIMED OUT\nReconnecting...')
             start(0)
             break
 
