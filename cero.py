@@ -19,7 +19,7 @@ parser.add_argument("-I", "--ident", help="specify ident", type=str, default='ze
 parser.add_argument("-i", "--identify", help="password for NickServ identification", type=str)
 parser.add_argument("-n", "--nick", help="use a different nick than default", type=str, default='cero')
 parser.add_argument("-r", "--realname",help="specify bot's realname", type=str, default='1.5')
-parser.add_argument("-j", "--join", help="specify channels to join", type=str)
+parser.add_argument("-j", "--join", help="specify channels to join. put in quote marks and comma-seperate multiple channels WITHOUT spaces", type=str)
 parser.add_argument("-a", "--admin", help="add admin level 4", type=str)
 args = parser.parse_args()
 

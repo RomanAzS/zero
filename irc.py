@@ -2,6 +2,7 @@
 
 from plugins.omdb import imdb
 from plugins.last import History
+from plugins.sed import sed
 channels = {}
 admins = {"kojiro":4}
 botnick = 'cero' 
@@ -34,8 +35,9 @@ class Options:
 
 class Admins:
     """Stuff for checking adminship"""
-    def __init__(self, opt):
+    def __init__(self, opt, chan):
         self.admins = opt.admins
+        self.chan = chan
     # 0 is ignored, 1 is normal, 2&3 are admin, 4 is god aka me
     def isAdmin(self, user):
         return self.admins[user.lower()] > 1
@@ -74,7 +76,7 @@ class Recv:
         self.channels = channels
         self.options = optobj
 #        options = optobj
-        self.admins = Admins(self.options)
+        self.admins = Admins(self.options, self.channels)
         self.history = history
         self.s = send
         self.privmsg = Privmsg(self.history, self.admins)
@@ -218,7 +220,7 @@ class Privmsg:
         else: self.last.recv_msg(user, channel, message)
         hook = message.split()[0]
         msgsanshook = message.replace(hook, '', 1).strip()
-        if hook not in self.hooks.keys(): return
+        if hook not in self.hooks.keys(): self.sed(user, channel, msg)
         elif self.admins.level(user) >= self.hooks[hook][1]:
             return self.hooks[hook][0](user, host, channel, msgsanshook)
     def raw(self, user, host, channel, msg):
@@ -226,6 +228,10 @@ class Privmsg:
         if self.pm: 
             print(msg)
             return msg + '\r\n'
+    def sed(self, user, channel, msg):
+        if msg[1][:-1] in self.admins.chan[channel].keys():
+            return sed(user, msg[0][:-1], channel, msg[2], self.last)
+        else: return sed(user, user, msg[2], channel, self.last)
 
 class Send:
     def __init__(self, sock):
