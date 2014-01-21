@@ -36,14 +36,21 @@ def set_flags(sedobject, flags):
     setattr(sedobject, 'count', count)
 
 def get_message(sedregex, nick, log, qual=None):
+    print(log)
     try:
-        for message in log:
+        for message in log[1:]:
+            print(log)
+            print(message)
+            print(re.search(sedregex, message))
+#            print(re.search(qual, message))
             try:
                 if qual:
-                    if re.search(sedregex, message[1]) and re.search(qual, message[1]):
+                    if re.search(sedregex, message) and re.search(qual, message):
+                        print(message,1)
                         return message
                 else:
-                    if re.search(sedregex, message[1]):
+                    if re.search(sedregex, message):
+                        print(message,2)
                         return message
             except BaseException:
                 pass
@@ -53,8 +60,12 @@ def get_message(sedregex, nick, log, qual=None):
 
 #@Hook("PRIVMSG")
 def sed(user, to, chan, msg, backlog):
+    print(backlog.backlog)
+    log = list(backlog.backlog[chan.lower()])
+    log.reverse()
     nick = user
     print(msg)
+    msg = msg.rstrip('\r')
     s = type('SedObject', tuple(), {})
     
     if not SED_REGEX.match(msg):
@@ -69,17 +80,21 @@ def sed(user, to, chan, msg, backlog):
         nick = s.target
 
     if s.qual:
-        s.msg = get_message(s.to_replace, nick, backlog.backlog[chan.lower()], qual=s.qual)
+        print(s.to_replace,nick,log)
+        s.msg = get_message(s.to_replace, nick,log, qual=s.qual)
     else:
-        s.msg = get_message(s.to_replace, nick, to)
+        print(s.to_replace,nick,to)
+        s.msg = get_message(s.to_replace, nick, log)
 
     if not s.msg:
-        pass
+        return
 #        return (user,to,targ,msg)
 
     try:
         new_msg = re.sub(s.to_replace, s.replacement, s.msg, s.count, s.flags)
-        return  "PRIVMSG %s :<%s> %s" % (channel, nick, new_msg)
+        print(new_msg)
+        print("PRIVMSG {0} :{1}".format(chan, new_msg) )# % (chan, new_msg))
+        return "PRIVMSG {0} :{1}".format(chan, new_msg) # % (chan, new_msg)
 #        return (user,to,targ,msg)
     except BaseException:
         traceback.print_exc()

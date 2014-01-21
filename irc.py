@@ -220,7 +220,7 @@ class Privmsg:
         else: self.last.recv_msg(user, channel, message)
         hook = message.split()[0]
         msgsanshook = message.replace(hook, '', 1).strip()
-        if hook not in self.hooks.keys(): self.sed(user, channel, msg)
+        if hook not in self.hooks.keys(): return self.sed(user, channel, msg)
         elif self.admins.level(user) >= self.hooks[hook][1]:
             return self.hooks[hook][0](user, host, channel, msgsanshook)
     def raw(self, user, host, channel, msg):
@@ -231,7 +231,7 @@ class Privmsg:
     def sed(self, user, channel, msg):
         if msg[1][:-1] in self.admins.chan[channel].keys():
             return sed(user, msg[0][:-1], channel, msg[2], self.last)
-        else: return sed(user, user, msg[2], channel, self.last)
+        else: return sed(user, user, channel, msg[2], self.last)
 
 class Send:
     def __init__(self, sock):
