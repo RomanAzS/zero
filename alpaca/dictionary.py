@@ -37,7 +37,10 @@ def dictionary(query):
             print('using cached thing')
             break
     else: 
-        req = urllib.request.urlopen("http://www.google.com/dictionary/json?callback=dict_api.callbacks.id100&sl=en&tl=en&restrict=pr%%2Cde&client=te&q=%s" % query)
+        try:
+            req = urllib.request.urlopen("http://www.google.com/dictionary/json?callback=dict_api.callbacks.id100&sl=en&tl=en&restrict=pr%%2Cde&client=te&q=%s" % query)
+        except urllib.error.HTTPError:
+            return ERR_NOTFOUND
         response = req.read().decode()[25:-10].replace("\\x", "\\u00")
         res = json.loads(response)
         cache.append((query, res))
@@ -85,4 +88,7 @@ def dictionary(query):
     return "\002%s\002: %s" % (query, ret)
 
 def main(user, host, channel, message):
-    return "PRIVMSG %s :%s\r\n" % (channel, dictionary(message))
+    try: 
+        return "PRIVMSG %s :%s\r\n" % (channel, dictionary(message))
+    except KeyError: return "PRIVMSG %s :%s\r\n" % (channel, ERR_NOTFOUND)
+    except: return "PRIVMSG %s :%s\r\n" % (channel, ERR_UNSPECIFIED)
