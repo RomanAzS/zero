@@ -22,6 +22,8 @@ parser.add_argument("-n", "--nick", help="use a different nick than default", ty
 parser.add_argument("-r", "--realname",help="specify bot's realname", type=str, default='1.5')
 parser.add_argument("-j", "--join", help="specify channels to join. put in quote marks and comma-seperate multiple channels WITHOUT spaces", type=str)
 parser.add_argument("-a", "--admin", help="add admin level 4", type=str)
+parser.add_argument("-z", "--zero", help="only include plugins native to cero",action="store_true")
+parser.add_argument("-q", "--quiet", help="don't print things", action="store_true")
 args = parser.parse_args()
 
 if not args.warnoff:
@@ -46,7 +48,7 @@ if not args.warnoff:
 
 # should do the thing with config stuff too sometime
 # since there's a warning for it and all
-
+if args.quiet: __builtins__.print = lambda *args: None
 HOST = args.hostname
 PORT = args.port 
 NICK = args.nick 
@@ -57,9 +59,13 @@ print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
 nick = Nick(NICK)
 opt = Options()
-opt.args(isConfig, args.join, args.identify, args.admin)
+opt.args(isConfig, args.join, args.identify, args.admin, args.zero)
 print(args.join)
 print(Nick)
+
+if "ConnectionResetError" not in dir(): # because py3.2 is a stupid shit
+    ConnectionResetError = socket.error
+
 def start(loop):
     s = socket.socket()
     s.settimeout(300)

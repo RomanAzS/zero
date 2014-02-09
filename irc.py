@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import random
 
 from plugins.omdb import imdb
 from plugins.last import History
-from plugins.sed import sed
+from alpaca import dictionary
+#from plugins.sed import sed
 channels = {}
 admins = {"kojiro":4}
 botnick = 'cero' 
@@ -24,11 +26,15 @@ class Options:
         self.config = None
         self.ajoin = None
         self.nickserv = None
-    def args(self, config, autojoin, identify, admin):
+    def args(self, config, autojoin, identify, admin, zero):
         self.nickserv = identify
         self.ajoin = autojoin
         self.config = config
-        self.admins = {admin: 4} or {"kojiro": 4}
+        self.admins = {}
+        if admin:
+            ad = admin.split(',')
+            for a in ad: self.admins[a.lower()] = 4
+#            self.admins = {admin: 4} or {"kojiro": 4}
     def ret(self):
         turn = {'ns': self.nickserv, 'join': self.ajoin, 'conf': self.config}
         return turn
@@ -207,7 +213,8 @@ class Privmsg:
         self.last = historyobj
         self.admins = adminobj
         self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
-                        '``': (self.raw, 4)}
+                        '``': (self.raw, 4), '.choose': (self.choose, 1), 
+                      '.dict': (dictionary.main, 1)}
 #        self.prefix = {'norm': '.', 'admin': '^'}
         self.pm = False
     def hook(self, msg, x):
@@ -220,7 +227,7 @@ class Privmsg:
         else: self.last.recv_msg(user, channel, message)
         hook = message.split()[0]
         msgsanshook = message.replace(hook, '', 1).strip()
-        if hook not in self.hooks.keys(): return self.sed(user, channel, msg)
+        if hook not in self.hooks.keys():pass# return self.sed(user,channel, msg)
         elif self.admins.level(user) >= self.hooks[hook][1]:
             return self.hooks[hook][0](user, host, channel, msgsanshook)
     def raw(self, user, host, channel, msg):
@@ -228,6 +235,10 @@ class Privmsg:
         if self.pm: 
             print(msg)
             return msg + '\r\n'
+    def choose(self, user, host, channel, msg):
+        msg = msg.split(',')
+        print("PRIVMSG %s:%s: %s\r\n" % (channel, user, random.choice(msg).strip()))
+        return "PRIVMSG %s :%s: %s\r\n" % (channel, user, random.choice(msg).strip())
     def sed(self, user, channel, msg):
         if msg[1][:-1] in self.admins.chan[channel].keys():
             return sed(user, msg[0][:-1], channel, msg[2], self.last)
