@@ -4,6 +4,7 @@ import random
 from plugins.omdb import imdb
 from plugins.last import History
 from alpaca import dictionary
+from alpaca import wz
 #from plugins.sed import sed
 channels = {}
 admins = {"kojiro":4}
@@ -214,7 +215,8 @@ class Privmsg:
         self.admins = adminobj
         self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
                         '``': (self.raw, 4), '.choose': (self.choose, 1), 
-                      '.dict': (dictionary.main, 1)}
+                      '.dict': (dictionary.main, 1), '.wz': (wz.main, 1),
+                      '.level': (self.promo,0) }
 #        self.prefix = {'norm': '.', 'admin': '^'}
         self.pm = False
     def hook(self, msg, x):
@@ -239,6 +241,16 @@ class Privmsg:
         msg = msg.split(',')
         print("PRIVMSG %s:%s: %s\r\n" % (channel, user, random.choice(msg).strip()))
         return "PRIVMSG %s :%s: %s\r\n" % (channel, user, random.choice(msg).strip())
+    def promo(self, user, host, channel, msg):
+        print(msg)
+        msgs = msg.split()
+        if msg.strip() == '': 
+            level = self.admins.level(user)
+            return "PRIVMSG %s :%s: You are currently admin level %s.\r\n" % (channel, user, level)
+        elif (msgs[1].isdigit()) and (self.admins.level(user) >= 4):
+            if (0 <= int(msgs[1]) <= 3) and (msgs[0].lower() in self.admins.admins.keys()):
+                self.admins.admins[msgs[0].lower()] = int(msgs[1])
+                return "PRIVMSG %s :%s is now admin level %d.\r\n" % (channel, msgs[0], int(msgs[1]))
     def sed(self, user, channel, msg):
         if msg[1][:-1] in self.admins.chan[channel].keys():
             return sed(user, msg[0][:-1], channel, msg[2], self.last)
