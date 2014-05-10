@@ -99,3 +99,5 @@ def sed(user, to, chan, msg, backlog):
     except BaseException:
         traceback.print_exc()
 
+
+def main(): pass

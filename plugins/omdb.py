@@ -50,3 +50,5 @@ def imdb(user, host, channel, query):
     print(r)
 #    send.msg(channel, r)
     return "PRIVMSG %s %s\r\n" % (channel, r)
+
+def main(): pass

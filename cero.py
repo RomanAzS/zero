@@ -23,7 +23,7 @@ parser.add_argument("-r", "--realname",help="specify bot's realname", type=str, 
 parser.add_argument("-j", "--join", help="specify channels to join. put in quote marks and comma-seperate multiple channels WITHOUT spaces", type=str)
 parser.add_argument("-a", "--admin", help="add admin level 4", type=str)
 parser.add_argument("-z", "--zero", help="only include plugins native to cero",action="store_true")
-parser.add_argument("-q", "--quiet", help="don't print things", action="store_true")
+parser.add_argument("-q", "--quiet", help="don't print things. use with -w", action="store_true")
 args = parser.parse_args()
 
 if not args.warnoff:

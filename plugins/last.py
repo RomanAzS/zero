@@ -18,3 +18,5 @@ class History:
             xx = ''
             for i in x: xx += 'NOTICE %s %s\r\n' % (user, i)
             return xx
+
+def main(): pass #how am i gonna make this work tho
