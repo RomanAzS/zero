@@ -7,7 +7,7 @@ from alpaca import dictionary
 from alpaca import wz
 #from plugins.sed import sed
 channels = {}
-admins = {"kojiro":4}
+admins = {"sasaki":4}
 botnick = 'cero' 
 NICK = None
 
@@ -56,6 +56,7 @@ class Admins:
     #somewhere in this mess, check whether new arrivals are in admin conf
     # start using config files?
     def giveAdmin(self, user):
+
 #        print(config)
         config = False
         user = user.lower()
@@ -65,15 +66,17 @@ class Admins:
             pass
         else: 
             if user not in self.admins.keys():
-                self.admins[user] = 1
+                self.admins[user.lower()] = 1
 #                print(self.admins)
     def changeNick(self, old, new):
-        self.admins[new] = self.admins[old]
-        del self.admins[old]
+        print(old, '==>', new)
+        if old.lower() == new.lower(): return
+        self.admins[new.lower()] = self.admins[old.lower()]
+        del self.admins[old.lower()]
     def ignore(self, user):
-        self.admins[user] = 0
+        self.admins[user.lower()] = 0
     def promote(self, user):
-        self.admins[user] = self.admins[user] + 1
+        self.admins[user.lower()] = self.admins[user] + 1
 
 history = History()
 #options = None
