@@ -4,7 +4,7 @@ import random
 from plugins.omdb import imdb
 from plugins.last import History
 from alpaca import dictionary
-from alpaca import wz
+#from alpaca import wz
 #from plugins.sed import sed
 channels = {}
 admins = {"sasaki":4}
@@ -218,8 +218,8 @@ class Privmsg:
         self.admins = adminobj
         self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
                         '``': (self.raw, 4), '.choose': (self.choose, 1), 
-                      '.dict': (dictionary.main, 1), '.wz': (wz.main, 1),
-                      '.level': (self.promo,0) }
+                      '.dict': (dictionary.main, 1), #'.wz': (wz.main, 1),
+                      '.level': (self.promo,0) , '.should': (self.should,1)}
 #        self.prefix = {'norm': '.', 'admin': '^'}
         self.pm = False
     def hook(self, msg, x):
@@ -248,6 +248,16 @@ class Privmsg:
             return "PRIVMSG %s :%s: %s\r\n" % (channel, user, random.choice(msg).strip())
         print("PRIVMSG %s:%s: %s\r\n" % (channel, user, random.choice(msg).strip()))
         return "PRIVMSG %s :%s: %s\r\n" % (channel, user, random.choice(msg).strip())
+    def should(self, user, host, channel, mesg):
+        who = mesg.split()[0]
+        mesg = mesg.replace(who, '', 1)
+        msg = mesg.split('or')
+        if len(msg) == 0: return
+        if who.lower() == 'i':
+            who = 'you'
+        rand = random.choice(msg)
+        
+        return "PRIVMSG %s :I think %s should probably %s.\r\n" % (channel, who, rand.strip())
     def promo(self, user, host, channel, msg):
         print(msg)
         msgs = msg.split()
