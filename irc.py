@@ -242,7 +242,7 @@ class Privmsg:
             return msg + '\r\n'
     def choose(self, user, host, channel, ms_g):
         msg = ms_g.split(',')
-        if len(msg) == 0: return
+        if len(msg) < 2 and 'or' not in ms_g: return
         elif len(msg) == 1: # and 'or' in msg[1]:
             msg = ms_g.split(' or ')
             return "PRIVMSG %s :%s: %s\r\n" % (channel, user, random.choice(msg).strip())
