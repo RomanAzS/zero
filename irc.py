@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import re
 
 from plugins.omdb import imdb
 from plugins.last import History
