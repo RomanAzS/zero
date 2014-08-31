@@ -100,7 +100,8 @@ class Recv:
     def handler(self, raw_message, nick):
         """Decide what to do with incoming message"""
         NICK = nick
-        message = raw_message.split(':', 2)
+        message = re.split('^:| :', raw_message, maxsplit=2)
+#        message = raw_message.split(':', 2)
         try:
             messageType = message[1].split()[1].strip()
             try:
