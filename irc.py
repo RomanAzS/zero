@@ -4,7 +4,7 @@ import re
 
 from plugins.omdb import imdb
 from plugins.last import History
-from alpaca import dictionary
+from alpaca import dictionary, wiki
 #from alpaca import wz
 #from plugins.sed import sed
 channels = {}
@@ -216,12 +216,14 @@ class Recv:
 class Privmsg:
     def __init__(self, historyobj, adminobj):
         # hooks should be commandname: (function, adminlevel)
+        self.wiki = wiki.Wikipedia()
         self.last = historyobj
         self.admins = adminobj
         self.hooks = {'.imdb': (imdb,1), '.history': (self.last.last, 1), 
                         '``': (self.raw, 4), '.choose': (self.choose, 1), 
                       '.dict': (dictionary.main, 1), #'.wz': (wz.main, 1),
-                      '.level': (self.promo,0) , '.should': (self.should,1)}
+                      '.level': (self.promo,0) , '.should': (self.should,1),
+                      '.w': (self.wiki.wiki, 1), '.wiki': (self.wiki.wiki,1)}
 #        self.prefix = {'norm': '.', 'admin': '^'}
         self.pm = False
     def hook(self, msg, x):
