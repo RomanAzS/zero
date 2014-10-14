@@ -25,6 +25,8 @@ class Wikipedia:
             if pid == '-1': 
                 return self.search(query)
             extract = pages[pid]["extract"]
+            if "may refer to" in extract.lower():
+                return self.search(query)
             return (extract,tail)
 #        except:
 #            print(sys.exc_info()[0])
@@ -38,15 +40,29 @@ class Wikipedia:
         response = urllib.request.urlopen(req)
         response = json.loads(response.read().decode())
         results = response['query']['search']
-        r = [n["title"] for n in results]
-        tail = "Not what you were looking for? Try %s" % ' | '.join(r[1:])
-        return self.get(r[1], tail)
+        r = [n["title"] for n in results if 'disambiguation' not in n["title"].lower()]
+        def until_100(qs):
+            aggr = 0
+            index = 0
+            for i in qs:
+                if len(i) + aggr < 90:
+                    aggr = aggr + len(i)
+                    index +=1
+            return len(qs) - index 
+        windex = len(r) - (until_100(r[1:]) - 1)
+        print(windex)
+        print(r[1:windex])
+        tail = "Not what you were looking for? Try %s" % ' | '.join(r[1:windex])
+        return self.get(r[0], tail)
 
     def parse(self, extract):
-        maxlen = 420
+        maxlen = 425
         ext = re.sub('<b>|</b>', '\x02', extract[0])
         ext = re.sub('<i>|</i>', '\x1f', ext)
         ext = re.sub('<p>|</p>|<[/]{0,1}su[bp]>|\n', '', ext)
+        print(ext)
+        ext = re.sub('<.+?>', '', ext)
+        print(ext)
         sentences = re.findall(".+?(?<!Dr|Mr|Jr|Sr| \w|\.\w)[.!?]\s", ext)
 #        sentagg = ''
         if extract[1] is not None:
@@ -54,10 +70,12 @@ class Wikipedia:
         i = 0
         agg = ''
         for word in ext.split():
-            if (len(agg) + len(word) + 1) < maxlen:
-                agg = "%s %s" % (agg, word)
+            if (len(agg) + len(word) + 1) > maxlen:
+                break
+            else:
+                agg = "%s%s " % (agg, word)
         if len(agg) < len(ext):
-            agg = "%s [truncated]" % agg
+            agg = "%s [...] " % agg
         # while len(sentagg) < maxlen and i < len(sentences): 
         #     sentagg_ = sentagg + sentences[i]
         #     if len(sentagg_) > maxlen: break
@@ -65,9 +83,10 @@ class Wikipedia:
         #     print(sentagg)
         #     i+=1
         # print(len(sentagg))
+        agg = agg.lstrip()
         if extract[1] is not None:
-            return agg.lstrip() + extract[1]
-        else: return agg.lstrip() 
+            return agg + extract[1]
+        else: return agg
 
     def wiki(self, user, host, channel, msg):
         return "PRIVMSG %s :%s\r\n" % (channel, self.parse(self.get(msg)))
