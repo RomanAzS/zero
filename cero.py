@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-import socket
+import socket, ssl
 from irc import Recv, Nick, Options, Send
 import sys
 import argparse
@@ -14,7 +14,7 @@ isConfig = True
 parser = argparse.ArgumentParser(description="Azi's bot v 1.5")
 parser.add_argument("hostname", help="server hostname to connect to", type=str)
 parser.add_argument("-p", "--port", help="specify port number to use",type=int, default=6667)
-parser.add_argument("-P", "--pass", help="server password for authentication", type=str)
+parser.add_argument("-P", "--password", help="server password for authentication", type=str)
 parser.add_argument("-w", "--warnoff", help="disable warnings", action="store_true")
 parser.add_argument("-I", "--ident", help="specify ident", type=str, default='zero')
 parser.add_argument("-i", "--identify", help="password for NickServ identification", type=str)
@@ -24,6 +24,7 @@ parser.add_argument("-j", "--join", help="specify channels to join. put in quote
 parser.add_argument("-a", "--admin", help="add admin level 4", type=str)
 parser.add_argument("-z", "--zero", help="only include plugins native to cero",action="store_true")
 parser.add_argument("-q", "--quiet", help="don't print things. use with -w", action="store_true")
+parser.add_argument("-s", "--use-ssl", help="connect using SSL", action="store_true")
 args = parser.parse_args()
 
 if not args.warnoff:
@@ -53,7 +54,8 @@ HOST = args.hostname
 PORT = args.port 
 NICK = args.nick 
 IDENT = args.ident 
-REALNAME = args.realname 
+REALNAME = args.realname
+PASS = args.password
 print(args.join)
 print("Connecting to {0}:{1}..." .format(HOST, PORT))
 
@@ -68,8 +70,14 @@ if "ConnectionResetError" not in dir(): # because py3.2 is a stupid shit
 
 def start(loop):
     s = socket.socket()
+    if args.use_ssl:
+        s_sl = ssl.wrap_socket(s)
+        print("Using SSL to connect to server")
+        s = s_sl
     s.settimeout(300)
     s.connect((HOST, PORT)) # connect to host and port
+    if PASS is not None: 
+        s.send(("PASS %s\r\n" % PASS).encode())
     s.send(("NICK %s\r\n" % nick.nick).encode()) # send nickname
     s.send(("USER %s 8 *: %s\r\n" % (IDENT, REALNAME)).encode())
     
